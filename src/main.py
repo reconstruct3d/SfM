@@ -3,29 +3,33 @@ import numpy as np
 import pickle as pkl 
 import argparse
 
+import pdb
+
 from utils import * 
 
 def main(opts): 
-    #Loading 5th and 6th image data only (hardcoded for now)..
-    with open('../data/fountain-P11/images/keypoints_descriptors/0005.pkl') as fileobj: 
-        data1 = pkl.load(fileobj)
-        kp1, desc1 = data1
-        kp1 = DeserializeKeypoints(kp1)
-    
-    with open('../data/fountain-P11/images/keypoints_descriptors/0006.pkl') as fileobj: 
-        data2 = pkl.load(fileobj)
-        kp2, desc2 = data2
-        kp2 = DeserializeKeypoints(kp2)
+    #Reading two images for reference
+    img1 = cv2.imread('../data/fountain-P11/images/0004.jpg')
+    img2 = cv2.imread('../data/fountain-P11/images/0006.jpg')
+
+    #Converting from BGR to RGB format
+    img1 = img1[:,:,::-1]
+    img2 = img2[:,:,::-1]
 
     #1. FEATURE MATCHING (ONLY BRUTE FORCE MATCHING IS IMPLEMENTED FOR NOW)..
-    matcher = cv2.BFMatcher(crossCheck=opts.crossCheck)
+    surfer=cv2.xfeatures2d.SURF_create()
+    kp1, desc1 = surfer.detectAndCompute(img1,None)
+    kp2, desc2 = surfer.detectAndCompute(img2,None)
+
+    matcher = cv2.BFMatcher(crossCheck=True)
     matches = matcher.match(desc1, desc2)
-    matches = sorted(matches, key=lambda x:x.distance)
+    matches = sorted(matches, key = lambda x:x.distance)
 
     #2. FUNDAMENTAL MATRIX ESTIMATION USING RANSAC + 8 POINT ALGORITHM
     img1pts,img2pts = GetAlignedMatches(kp1,desc1,kp2,desc2,matches)
     F,mask = cv2.findFundamentalMat(img1pts,img2pts,method=cv2.FM_RANSAC,param1=opts.outlierThres,
                                     param2=opts.fundProb)
+    mask = mask.astype(bool).flatten()
 
     #3. CAMERA POSE ESTIMATION
     K = np.array([[2759.48,0,1520.69],[0,2764.16,1006.81],[0,0,1]]) #hardcoded for now, have to generalize.. 
