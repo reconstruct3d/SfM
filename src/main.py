@@ -8,6 +8,8 @@ import pdb
 from utils import *
 
 # Read all images from the given directory.
+
+
 def readAllImages(path):
     images = []
     for filename in os.listdir(path):
@@ -61,8 +63,64 @@ def main(opts):
         (R, t)), img1ptsNorm.T, img2ptsNorm.T)
     pts3d = cv2.convertPointsFromHomogeneous(pts4d.T)[:, 0, :]
 
+    # 6. Read the third images and apply SURF.
+    img3 = cv2.imread('../data/fountain-P11/images/0005.jpg')
+    img3 = img3[:, :, ::-1]
+    surfer = cv2.xfeatures2d.SURF_create()
+    kp3, desc3 = surfer.detectAndCompute(img3, None)
+
+    img3pts, pts3dpts = ut.Find2D3DMatches(
+        desc1, img1idx, desc2, img2idx, desc3, kp3, mask, pts3d)
+
+    # 7. Apply the PnP algoritm.
+
+    # 7.1 Apply RANSAC
+    retval, Rvec, tnewgt, mask3gt = cv2.solvePnPRansac(pts3dpts[:, np.newaxis], img3pts[:, np.newaxis],
+                                                       K, None, confidence=.99, flags=cv2.SOLVEPNP_DLS)
+    Rnewgt, _ = cv2.Rodrigues(Rvec)
+
+    Rnew, tnew, mask3 = sfmnp.LinearPnPRansac(
+        pts3dpts, img3pts, K, outlierThres=5.0, iters=2000)
+
+    # 8. Perfrom re-triangulation with the third image.
+    kpNew, descNew = kp3, desc3
+
+    kpOld, descOld = kp1, desc1
+    ROld, tOld = np.eye(3), np.zeros((3, 1))
+
+    accPts = []
+    for (ROld, tOld, kpOld, descOld) in [(np.eye(3), np.zeros((3, 1)), kp1, desc1), (R, t, kp2, desc2)]:
+
+        # Matching between old view and newly registered view..
+        print '[Info]: Feature Matching..'
+        matcher = cv2.BFMatcher(crossCheck=True)
+        matches = matcher.match(descOld, desc3)
+        matches = sorted(matches, key=lambda x: x.distance)
+        imgOldPts, imgNewPts, _, _ = ut.GetAlignedMatches(kpOld, descOld, kpNew,
+                                                          descNew, matches)
+
+        # Pruning the matches using fundamental matrix..
+        print '[Info]: Pruning the Matches..'
+        F, mask = cv2.findFundamentalMat(
+            imgOldPts, imgNewPts, method=cv2.FM_RANSAC, param1=.1, param2=.99)
+        mask = mask.flatten().astype(bool)
+        imgOldPts = imgOldPts[mask]
+        imgNewPts = imgNewPts[mask]
+
+        # Triangulating new points
+        print '[Info]: Triangulating..'
+        newPts = sfmnp.GetTriangulatedPts(
+            imgOldPts, imgNewPts, K, Rnew, tnew, cv2.triangulatePoints, ROld, tOld)
+
+        # Adding newly triangulated points to the collection
+        accPts.append(newPts)
+
+    # Append to the previous results.
+    accPts.append(pts3d)
+
     # Finally, saving 3d points in .ply format to view in meshlab software
-    pts2ply(pts3d)
+    ut.pts2ply(np.concatenate((accPts), axis=0), 'test.ply')
+
     return
 
 
