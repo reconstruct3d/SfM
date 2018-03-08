@@ -7,6 +7,15 @@ import pdb
 
 from utils import * 
 
+# Read all images from the given directory.
+def readAllImages(path):
+    images = []
+    for filename in os.listdir(path):
+        img = cv2.imread(os.path.join(path, filename))
+        if img is not None:
+            images.append(img)
+    return images
+
 def main(opts): 
     #Reading two images for reference
     img1 = cv2.imread('../data/fountain-P11/images/0004.jpg')
