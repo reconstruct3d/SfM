@@ -2,8 +2,8 @@ import cv2
 import numpy as np 
 import pickle as pkl 
 import argparse
-from itertools import izip
-
+#from itertools import izip
+izip = zip
 import pdb
 
 from utils import * 
@@ -120,10 +120,14 @@ def addViewsToReconstruction(imgNames, pts3d, pts3dRef, kps, descs, K):
 
     return None
 
-def main(opts): 
+def main(opts, imgNames, fileName): 
     #Reading two images for reference
-    imgNames = ['../data/fountain-P11/images/0004.jpg','../data/fountain-P11/images/0005.jpg',
-                '../data/fountain-P11/images/0005.jpg']
+#    imgNames = ['../data/fountain-P11/images/0004.jpg','../data/fountain-P11/images/0005.jpg',
+#                '../data/fountain-P11/images/0005.jpg']
+    #imgNames = ['/root/FYP/SfM/data/fountain-P11/images/0004.jpg','/root/FYP/SfM/data/fountain-P11/images/0005.jpg',
+    #            '/root/FYP/SfM/data/fountain-P11/images/0005.jpg']
+
+
     K = np.array([[2759.48,0,1520.69],[0,2764.16,1006.81],[0,0,1]]) #hardcoded for now, have to generalize.. 
 
     #Initial 2 view SFM
@@ -132,13 +136,15 @@ def main(opts):
     #Incrementally add more cameras now
     addViewsToReconstruction(imgNames[2:], _pts3d, _pts3dRef, kps, descs, K)
 
-    return 
+#    return 
 
     #Finally, saving 3d points in .ply format to view in meshlab software
-    pts2ply(_pts3d)
+    pts2ply(_pts3d, filename=fileName)
     return 
 
 def SetArguments(parser): 
+    parser.add_argument('runserver',action='store',type=str,default='') 
+    parser.add_argument('0.0.0.0:8000',action='store',type=str,default='') 
     parser.add_argument('-dataDir',action='store',type=str,default='../data/fountain-P11/images/keypoints_descriptors',dest='dataDir') 
     parser.add_argument('-outName',action='store',type=str,default='../data/fountain-P11/images/matches',dest='outDir') 
     parser.add_argument('-printEvery',action='store', type=int, default=1, dest='printEvery') 
@@ -148,8 +154,8 @@ def SetArguments(parser):
     parser.add_argument('-fundProb',action='store', type=float, default=.99, dest='fundProb') 
     return 
 
-if __name__=='__main__': 
-    parser = argparse.ArgumentParser()
-    SetArguments(parser)
-    opts = parser.parse_args()
-    main(opts)
+#if __name__=='__main__': 
+parser = argparse.ArgumentParser()
+SetArguments(parser)
+opts = parser.parse_args()
+#main(opts)

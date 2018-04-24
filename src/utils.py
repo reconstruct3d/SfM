@@ -1,7 +1,7 @@
 import numpy as np 
 import cv2 
-import matplotlib.pyplot as plt 
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+#import matplotlib.pyplot as plt 
+#from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def SerializeKeypoints(kp): 
     """Serialize list of keypoint objects so it can be saved using pickle
