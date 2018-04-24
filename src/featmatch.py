@@ -46,7 +46,7 @@ def FeatMatch(opts, data_files=[]):
 def SetArguments(parser): 
 
     #directories stuff
-    parser.add_argument('--data_files',action='store',type=str,default='../data/fountain-P11/images/0001.jpg,../data/fountain-P11/images/0001.jpg',dest='data_files') 
+    parser.add_argument('--data_files',action='store',type=str,default='',dest='data_files') 
     parser.add_argument('--data_dir',action='store',type=str,default='../data/fountain-P11/images/',
                         dest='data_dir') 
     parser.add_argument('--ext',action='store',type=str,default='jpg,png',dest='ext') 
