@@ -1,6 +1,7 @@
 import numpy as np 
 import multiprocessing
 import cv2 
+import sys
 import argparse
 import pickle
 import os 
@@ -8,6 +9,7 @@ import os
 from utils import * 
 import pdb 
 
+izip = zip
 class SFM(object): 
     def __init__(self, opts): 
         self.opts = opts
@@ -34,11 +36,11 @@ class SFM(object):
             raise NotImplementedError
         
     def _LoadFeatures(self, name): 
-        with open(os.path.join(self.feat_dir,'kp_{}.pkl'.format(name)),'r') as f: 
+        with open(os.path.join(self.feat_dir,'kp_{}.pkl'.format(name)),'rb') as f: 
             kp = pickle.load(f)
         kp = DeserializeKeypoints(kp)
 
-        with open(os.path.join(self.feat_dir,'desc_{}.pkl'.format(name)),'r') as f: 
+        with open(os.path.join(self.feat_dir,'desc_{}.pkl'.format(name)),'rb') as f: 
             desc = pickle.load(f)
 
         return kp, desc 
@@ -142,22 +144,30 @@ class SFM(object):
                 self.matches_data[(prev_name,name)] = [matches, img1pts[mask], img2pts[mask], 
                                             img1idx[mask],img2idx[mask]]
                 print('triangulating {} and {}'.format(prev_name, name))
+                sys.stdout.flush()
                 self._TriangulateTwoViews(prev_name, name)
 
             else:
                 print('skipping {} and {}'.format(prev_name, name))
+                sys.stdout.flush()
+            output.put("Success")
 
     def _TriangulateNewView(self, name): 
         
+        output = multiprocessing.Queue()
         processes = list()
         for prev_name in self.image_data.keys(): 
-            process = multiprocessing.Process(target=_TriangulateNewViewThreaded, args=(name, prev_name))
+            process = multiprocessing.Process(target=self._TriangulateNewViewThreaded, args=(name, prev_name))
             processes.append(process)
 
         for process in processes:
+            print("Process starting...")
             process.start()
+        
+        results = [output.get() for p in processes]
 
         for process in processes:
+            print("Waiting for process...")
             process.join()
 
         # result_infos = [run_item(proc, prev_name) for prev_name in self.image_data.keys(): ]

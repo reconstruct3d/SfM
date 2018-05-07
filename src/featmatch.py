@@ -41,7 +41,7 @@ def FeatMatch(opts, data_files=[]):
             raise NotImplementedError
 
         if (i % opts.print_every) == 0:
-            print '{}/{} features done..'.format(i+1,len(img_paths))
+            print('{}/{} features done..'.format(i+1,len(img_paths)))
 
 def SetArguments(parser): 
 

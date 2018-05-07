@@ -1,8 +1,8 @@
 import numpy as np 
 import cv2 
 import pdb
-from itertools import izip 
-
+#from itertools import izip 
+izip = zip
 def SerializeKeypoints(kp): 
     """Serialize list of keypoint objects so it can be saved using pickle
     

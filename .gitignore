@@ -2,3 +2,4 @@
 *.ply
 *.pkl
 *.ipynb
+data/SfM_quality_evaluation
