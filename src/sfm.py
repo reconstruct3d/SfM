@@ -122,14 +122,14 @@ class SFM(object):
         self.image_data[name2][-1] = ref2 
 
     def _TriangulateNewViewThreaded(self, name, prev_name):
-        if prev_name != name: 
+        if prev_name != name:
             kp1, desc1 = self._LoadFeatures(prev_name)
-            kp2, desc2 = self._LoadFeatures(name)  
+            kp2, desc2 = self._LoadFeatures(name)
 
             desc1 = desc1[self.image_data[prev_name][-1] < 0]
             matches = self.matcher.match(desc1,desc2)
 
-            if len(matches) > 0: 
+            if len(matches) > 0:
                 matches = sorted(matches, key = lambda x:x.distance)
 
                 img1pts, img2pts, img1idx, img2idx = self._GetAlignedMatches(kp1,desc1,kp2,
@@ -141,11 +141,11 @@ class SFM(object):
 
                 self.matches_data[(prev_name,name)] = [matches, img1pts[mask], img2pts[mask], 
                                             img1idx[mask],img2idx[mask]]
-                print 'triangulating {} and {}'.format(prev_name, name)
+                print('triangulating {} and {}'.format(prev_name, name))
                 self._TriangulateTwoViews(prev_name, name)
 
             else:
-                print 'skipping {} and {}'.format(prev_name, name)
+                print('skipping {} and {}'.format(prev_name, name))
 
     def _TriangulateNewView(self, name): 
         
