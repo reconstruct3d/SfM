@@ -1,4 +1,5 @@
 import numpy as np 
+import multiprocessing
 import cv2 
 import argparse
 import pickle
@@ -120,33 +121,46 @@ class SFM(object):
         self.image_data[name1][-1] = ref1 
         self.image_data[name2][-1] = ref2 
 
+    def _TriangulateNewViewThreaded(self, name, prev_name):
+        if prev_name != name: 
+            kp1, desc1 = self._LoadFeatures(prev_name)
+            kp2, desc2 = self._LoadFeatures(name)  
+
+            desc1 = desc1[self.image_data[prev_name][-1] < 0]
+            matches = self.matcher.match(desc1,desc2)
+
+            if len(matches) > 0: 
+                matches = sorted(matches, key = lambda x:x.distance)
+
+                img1pts, img2pts, img1idx, img2idx = self._GetAlignedMatches(kp1,desc1,kp2,
+                                                                            desc2,matches)
+                
+                F,mask = cv2.findFundamentalMat(img1pts,img2pts,method=opts.fund_method,
+                                                param1=opts.outlier_thres,param2=opts.fund_prob)
+                mask = mask.astype(bool).flatten()
+
+                self.matches_data[(prev_name,name)] = [matches, img1pts[mask], img2pts[mask], 
+                                            img1idx[mask],img2idx[mask]]
+                print 'triangulating {} and {}'.format(prev_name, name)
+                self._TriangulateTwoViews(prev_name, name)
+
+            else:
+                print 'skipping {} and {}'.format(prev_name, name)
+
     def _TriangulateNewView(self, name): 
         
+        processes = list()
         for prev_name in self.image_data.keys(): 
-            if prev_name != name: 
-                kp1, desc1 = self._LoadFeatures(prev_name)
-                kp2, desc2 = self._LoadFeatures(name)  
+            process = multiprocessing.Process(target=_TriangulateNewViewThreaded, args=(name, prev_name))
+            processes.append(process)
 
-                desc1 = desc1[self.image_data[prev_name][-1] < 0]
-                matches = self.matcher.match(desc1,desc2)
+        for process in processes:
+            process.start()
 
-                if len(matches) > 0: 
-                    matches = sorted(matches, key = lambda x:x.distance)
+        for process in processes:
+            process.join()
 
-                    img1pts, img2pts, img1idx, img2idx = self._GetAlignedMatches(kp1,desc1,kp2,
-                                                                                desc2,matches)
-                    
-                    F,mask = cv2.findFundamentalMat(img1pts,img2pts,method=opts.fund_method,
-                                                    param1=opts.outlier_thres,param2=opts.fund_prob)
-                    mask = mask.astype(bool).flatten()
-
-                    self.matches_data[(prev_name,name)] = [matches, img1pts[mask], img2pts[mask], 
-                                                img1idx[mask],img2idx[mask]]
-                    print 'triangulating {} and {}'.format(prev_name, name)
-                    self._TriangulateTwoViews(prev_name, name)
-
-                else: 
-                    print 'skipping {} and {}'.format(prev_name, name)
+        # result_infos = [run_item(proc, prev_name) for prev_name in self.image_data.keys(): ]
         
     def _NewViewPoseEstimation(self, name): 
         
