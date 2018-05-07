@@ -52,22 +52,19 @@ def SerializeMatches(matches):
         out.append(matchTemp)
     return out
 
-def DeserializeMatchesDict(matches): 
+def DeserializeMatches(matches): 
     """Deserialize dictionary of matches so it can be converted back to 
     native opencv's format. 
     
     Args: 
-    matches: Serialized dictionary (same format as output of SerealizeMatches)
+    matches: Serialized list of matches object
     
     Returns: 
-    out: Deserealized dictionary (same format as input of SerealizeMatches method)"""
+    out: List of matches object"""
 
-    out = {}
-    for k,v in matches.items(): 
-        temp = []
-        for match in v:
-            temp.append(cv2.DMatch(match[0],match[1],match[2],match[3]))
-        out[k] = temp 
+    out = []
+    for match in matches:
+        out.append(cv2.DMatch(match[0],match[1],match[2],match[3])) 
     return out
 
 def GetAlignedMatches(kp1,desc1,kp2,desc2,matches):
@@ -125,3 +122,28 @@ def pts2ply(pts,colors,filename='out.ply'):
         for pt, cl in izip(pts,colors): 
             f.write('{} {} {} {} {} {}\n'.format(pt[0],pt[1],pt[2],
                                                 cl[0],cl[1],cl[2]))
+
+def DrawCorrespondences(img, ptsTrue, ptsReproj, ax, drawOnly=50): 
+    """
+    Draws correspondence between ground truth and reprojected feature point
+
+    Args: 
+    ptsTrue, ptsReproj: (n,2) numpy array
+    ax: matplotlib axis object
+    drawOnly: max number of random points to draw
+
+    Returns: 
+    ax: matplotlib axis object
+    """
+    ax.imshow(img)
+    
+    randidx = np.random.choice(ptsTrue.shape[0],size=(drawOnly,),replace=False)
+    ptsTrue_, ptsReproj_ = ptsTrue[randidx], ptsReproj[randidx]
+    
+    colors = colors=np.random.rand(drawOnly,3)
+    
+    ax.scatter(ptsTrue_[:,0],ptsTrue_[:,1],marker='x',c='r',linewidths=.1, label='Ground Truths')
+    ax.scatter(ptsReproj_[:,0],ptsReproj_[:,1],marker='x',c='b',linewidths=.1, label='Reprojected')
+    ax.legend()
+
+    return ax
