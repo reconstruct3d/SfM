@@ -20,5 +20,7 @@ Please download the standard data benchmarks from [here](https://github.com/open
 
 ## 2. Results (2-view SFM for now)
 
-![img1](./data/fountain-P11/images/0004.jpg) ![img2](./data/fountain-P11/images/0006.jpg)
+![img1](./data/fountain-P11/images/0004.jpg) 
+![img2](./data/fountain-P11/images/0006.jpg)
 
+## 2. Demo/Quick Start

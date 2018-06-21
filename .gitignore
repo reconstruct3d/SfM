@@ -1,2 +1,4 @@
 *.pyc
 *.ply
+*.pkl
+*.ipynb
